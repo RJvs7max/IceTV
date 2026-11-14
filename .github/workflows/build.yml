@@ -21,10 +21,6 @@ jobs:
           distribution: 'temurin'
 
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-
       - name: Initialize Gradle Wrapper & Build APK
         run: |
           gradle wrapper --gradle-version 8.7
