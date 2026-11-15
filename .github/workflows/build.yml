@@ -70,8 +70,8 @@ jobs:
                   applicationId = "com.me.launcher"
                   minSdk = 22
                   targetSdk = 34
-                  versionCode = 4
-                  versionName = "2.2-tvOS"
+                  versionCode = 5
+                  versionName = "2.3-tvOS"
               }
 
 
@@ -122,6 +122,7 @@ jobs:
               <uses-permission
                   android:name="android.permission.QUERY_ALL_PACKAGES"
                   tools:ignore="QueryAllPackagesPermission" />
+              <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
 
               <application
@@ -153,6 +154,17 @@ jobs:
                           <category android:name="android.intent.category.LAUNCHER" />
                       </intent-filter>
                   </activity>
+
+
+                  <receiver
+                      android:name=".BootReceiver"
+                      android:enabled="true"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.BOOT_COMPLETED" />
+                          <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                      </intent-filter>
+                  </receiver>
               </application>
           </manifest>
           EOF
@@ -381,7 +393,7 @@ jobs:
                           android:layout_width="wrap_content"
                           android:layout_height="wrap_content"
                           android:layout_marginTop="4dp"
-                          android:text="Press Select to launch"
+                          android:text="Press Menu 3x for Fire TV Home"
                           android:textColor="@color/text_secondary"
                           android:textSize="14sp" />
                   </LinearLayout>
@@ -450,6 +462,31 @@ jobs:
           EOF
 
 
+          cat << 'EOF' > app/src/main/java/com/me/launcher/BootReceiver.kt
+          package com.me.launcher
+
+
+          import android.content.BroadcastReceiver
+          import android.content.Context
+          import android.content.Intent
+
+
+          class BootReceiver : BroadcastReceiver() {
+              override fun onReceive(context: Context, intent: Intent) {
+                  val action = intent.action
+                  if (action == Intent.ACTION_BOOT_COMPLETED ||
+                      action == "android.intent.action.QUICKBOOT_POWERON"
+                  ) {
+                      val launchIntent = Intent(context, MainActivity::class.java).apply {
+                          addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+                      }
+                      context.startActivity(launchIntent)
+                  }
+              }
+          }
+          EOF
+
+
           cat << 'EOF' > app/src/main/java/com/me/launcher/MainActivity.kt
           package com.me.launcher
 
@@ -459,12 +496,15 @@ jobs:
           import android.graphics.Color
           import android.graphics.drawable.Drawable
           import android.os.Bundle
+          import android.os.SystemClock
           import android.provider.Settings
+          import android.view.KeyEvent
           import android.view.LayoutInflater
           import android.view.View
           import android.view.ViewGroup
           import android.widget.ImageView
           import android.widget.TextView
+          import android.widget.Toast
           import androidx.recyclerview.widget.GridLayoutManager
           import androidx.recyclerview.widget.RecyclerView
 
@@ -500,6 +540,10 @@ jobs:
               private lateinit var heroTitle: TextView
               private lateinit var heroSubtitle: TextView
               private lateinit var btnSettings: TextView
+
+
+              private var menuPressCount = 0
+              private var lastMenuPressTime = 0L
 
 
               override fun onCreate(savedInstanceState: Bundle?) {
@@ -543,6 +587,44 @@ jobs:
               }
 
 
+              override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+                  if (keyCode == KeyEvent.KEYCODE_MENU) {
+                      val now = SystemClock.elapsedRealtime()
+                      if (now - lastMenuPressTime < 1500L) {
+                          menuPressCount++
+                      } else {
+                          menuPressCount = 1
+                      }
+                      lastMenuPressTime = now
+
+
+                      if (menuPressCount >= 3) {
+                          menuPressCount = 0
+                          openStockFireTV()
+                          return true
+                      }
+                  }
+                  return super.onKeyDown(keyCode, event)
+              }
+
+
+              private fun openStockFireTV() {
+                  val candidates = listOf(
+                      "com.amazon.tv.launcher",
+                      "com.amazon.firehomestarter"
+                  )
+                  for (pkg in candidates) {
+                      val intent = packageManager.getLaunchIntentForPackage(pkg)
+                      if (intent != null) {
+                          intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+                          startActivity(intent)
+                          return
+                      }
+                  }
+                  Toast.makeText(this, "Original Fire TV launcher not found", Toast.LENGTH_SHORT).show()
+              }
+
+
               override fun onNewIntent(intent: Intent?) {
                   super.onNewIntent(intent)
                   grid.scrollToPosition(0)
@@ -558,7 +640,7 @@ jobs:
               private fun updateTopShelf(app: AppItem) {
                   heroIcon.setImageDrawable(app.icon)
                   heroTitle.text = app.label
-                  heroSubtitle.text = "Press Select to open ${app.label}"
+                  heroSubtitle.text = "Select to launch • Menu 3x for Fire TV"
                   heroShelf.alpha = 0.85f
                   heroShelf.animate().alpha(1.0f).setDuration(160).start()
               }
