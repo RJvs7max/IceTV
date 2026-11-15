@@ -70,8 +70,8 @@ jobs:
                   applicationId = "com.me.launcher"
                   minSdk = 22
                   targetSdk = 34
-                  versionCode = 3
-                  versionName = "2.1-tvOS"
+                  versionCode = 4
+                  versionName = "2.2-tvOS"
               }
 
 
@@ -166,7 +166,7 @@ jobs:
               <color name="text_primary">#F5F7FA</color>
               <color name="text_secondary">#9AA4B8</color>
               <color name="glass_card">#1F2636</color>
-              <color name="glass_card_focused">#2C364D</color>
+              <color name="glass_card_focused">#323D57</color>
               <color name="focus_ring">#FFFFFF</color>
               <color name="pill_bg">#26FFFFFF</color>
           </resources>
@@ -230,7 +230,7 @@ jobs:
                       <solid android:color="@color/glass_card" />
                       <stroke
                           android:width="1dp"
-                          android:color="#1FFFFFFF" />
+                          android:color="#26FFFFFF" />
                       <corners android:radius="18dp" />
                   </shape>
               </item>
@@ -276,6 +276,8 @@ jobs:
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="wrap_content"
+                  android:clipChildren="false"
+                  android:clipToPadding="false"
                   android:gravity="center_vertical"
                   android:orientation="horizontal">
 
@@ -335,4 +337,363 @@ jobs:
 
 
                   <ImageView
-                      android:id
+                      android:id="@+id/hero_icon"
+                      android:layout_width="96dp"
+                      android:layout_height="96dp"
+                      android:contentDescription="@null"
+                      android:scaleType="fitCenter" />
+
+
+                  <LinearLayout
+                      android:layout_width="0dp"
+                      android:layout_height="wrap_content"
+                      android:layout_marginStart="24dp"
+                      android:layout_weight="1"
+                      android:orientation="vertical">
+
+
+                      <TextView
+                          android:id="@+id/hero_kicker"
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:letterSpacing="0.08"
+                          android:text="TOP SHELF"
+                          android:textColor="@color/text_secondary"
+                          android:textSize="11sp"
+                          android:textStyle="bold" />
+
+
+                      <TextView
+                          android:id="@+id/hero_title"
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:layout_marginTop="2dp"
+                          android:ellipsize="end"
+                          android:singleLine="true"
+                          android:text="Welcome to IceTV"
+                          android:textColor="@color/text_primary"
+                          android:textSize="28sp"
+                          android:textStyle="bold" />
+
+
+                      <TextView
+                          android:id="@+id/hero_subtitle"
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:layout_marginTop="4dp"
+                          android:text="Press Select to launch"
+                          android:textColor="@color/text_secondary"
+                          android:textSize="14sp" />
+                  </LinearLayout>
+              </LinearLayout>
+
+
+              <!-- tvOS 5-Column Rounded App Dock Grid -->
+              <androidx.recyclerview.widget.RecyclerView
+                  android:id="@+id/grid"
+                  android:layout_width="match_parent"
+                  android:layout_height="0dp"
+                  android:layout_weight="1"
+                  android:clipChildren="false"
+                  android:clipToPadding="false"
+                  android:padding="12dp" />
+          </LinearLayout>
+          EOF
+
+
+          cat << 'EOF' > app/src/main/res/layout/item_app.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:layout_margin="10dp"
+              android:clipChildren="false"
+              android:clipToPadding="false"
+              android:focusable="true"
+              android:focusableInTouchMode="true"
+              android:gravity="center"
+              android:orientation="vertical">
+
+
+              <FrameLayout
+                  android:id="@+id/card_frame"
+                  android:layout_width="match_parent"
+                  android:layout_height="104dp"
+                  android:background="@drawable/card_bg"
+                  android:duplicateParentState="true"
+                  android:padding="14dp">
+
+
+                  <ImageView
+                      android:id="@+id/icon"
+                      android:layout_width="match_parent"
+                      android:layout_height="match_parent"
+                      android:layout_gravity="center"
+                      android:contentDescription="@null"
+                      android:scaleType="fitCenter" />
+              </FrameLayout>
+
+
+              <TextView
+                  android:id="@+id/label"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:layout_marginTop="8dp"
+                  android:alpha="0.0"
+                  android:ellipsize="end"
+                  android:gravity="center"
+                  android:singleLine="true"
+                  android:textColor="@color/text_primary"
+                  android:textSize="13sp"
+                  android:textStyle="bold" />
+          </LinearLayout>
+          EOF
+
+
+          cat << 'EOF' > app/src/main/java/com/me/launcher/MainActivity.kt
+          package com.me.launcher
+
+
+          import android.app.Activity
+          import android.content.Intent
+          import android.graphics.Color
+          import android.graphics.drawable.Drawable
+          import android.os.Bundle
+          import android.provider.Settings
+          import android.view.LayoutInflater
+          import android.view.View
+          import android.view.ViewGroup
+          import android.widget.ImageView
+          import android.widget.TextView
+          import androidx.recyclerview.widget.GridLayoutManager
+          import androidx.recyclerview.widget.RecyclerView
+
+
+          object Config {
+              const val COLUMNS = 5
+              const val FOCUS_SCALE = 1.15f
+              val HIDDEN = setOf("com.me.launcher")
+              val PINNED = listOf(
+                  "in.startv.hotstar",
+                  "com.netflix.ninja",
+                  "com.google.android.youtube.tv",
+                  "com.google.android.youtube",
+                  "com.android.chrome",
+                  "com.esaba.downloader",
+                  "com.android.vending"
+              )
+          }
+
+
+          data class AppItem(
+              val label: String,
+              val pkg: String,
+              val icon: Drawable,
+              val launchIntent: Intent
+          )
+
+
+          class MainActivity : Activity() {
+              private lateinit var grid: RecyclerView
+              private lateinit var heroShelf: View
+              private lateinit var heroIcon: ImageView
+              private lateinit var heroTitle: TextView
+              private lateinit var heroSubtitle: TextView
+              private lateinit var btnSettings: TextView
+
+
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  setContentView(R.layout.activity_main)
+
+
+                  grid = findViewById(R.id.grid)
+                  heroShelf = findViewById(R.id.hero_shelf)
+                  heroIcon = findViewById(R.id.hero_icon)
+                  heroTitle = findViewById(R.id.hero_title)
+                  heroSubtitle = findViewById(R.id.hero_subtitle)
+                  btnSettings = findViewById(R.id.btn_settings)
+
+
+                  btnSettings.setOnFocusChangeListener { v, hasFocus ->
+                      btnSettings.setTextColor(if (hasFocus) Color.BLACK else Color.WHITE)
+                      v.animate()
+                          .scaleX(if (hasFocus) 1.08f else 1f)
+                          .scaleY(if (hasFocus) 1.08f else 1f)
+                          .setDuration(120)
+                          .start()
+                  }
+
+
+                  btnSettings.setOnClickListener {
+                      try {
+                          startActivity(Intent(Settings.ACTION_SETTINGS))
+                      } catch (_: Exception) {
+                      }
+                  }
+
+
+                  grid.layoutManager = GridLayoutManager(this, Config.COLUMNS)
+                  grid.setHasFixedSize(true)
+                  grid.clipChildren = false
+                  grid.clipToPadding = false
+
+
+                  refreshApps()
+              }
+
+
+              override fun onNewIntent(intent: Intent?) {
+                  super.onNewIntent(intent)
+                  grid.scrollToPosition(0)
+                  refreshApps()
+              }
+
+
+              @Deprecated("Deprecated in Java")
+              override fun onBackPressed() {
+              }
+
+
+              private fun updateTopShelf(app: AppItem) {
+                  heroIcon.setImageDrawable(app.icon)
+                  heroTitle.text = app.label
+                  heroSubtitle.text = "Press Select to open ${app.label}"
+                  heroShelf.alpha = 0.85f
+                  heroShelf.animate().alpha(1.0f).setDuration(160).start()
+              }
+
+
+              private fun refreshApps() {
+                  Thread {
+                      val apps = loadApps()
+                      runOnUiThread {
+                          if (apps.isNotEmpty()) {
+                              updateTopShelf(apps[0])
+                          }
+                          grid.adapter = AppAdapter(
+                              items = apps,
+                              onClick = { app ->
+                                  try {
+                                      startActivity(app.launchIntent)
+                                  } catch (_: Exception) {
+                                  }
+                              },
+                              onFocus = { app -> updateTopShelf(app) }
+                          )
+                          grid.post {
+                              grid.getChildAt(0)?.requestFocus()
+                          }
+                      }
+                  }.start()
+              }
+
+
+              private fun loadApps(): List<AppItem> {
+                  val pm = packageManager
+                  val out = LinkedHashMap<String, AppItem>()
+
+
+                  for (cat in listOf(Intent.CATEGORY_LEANBACK_LAUNCHER, Intent.CATEGORY_LAUNCHER)) {
+                      val query = Intent(Intent.ACTION_MAIN).addCategory(cat)
+                      for (ri in pm.queryIntentActivities(query, 0)) {
+                          val pkg = ri.activityInfo.packageName
+                          if (pkg in Config.HIDDEN || out.containsKey(pkg)) continue
+
+
+                          val launch = Intent(Intent.ACTION_MAIN)
+                              .addCategory(cat)
+                              .setClassName(pkg, ri.activityInfo.name)
+                              .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+
+
+                          val drawable = ri.activityInfo.loadBanner(pm) ?: ri.loadIcon(pm)
+                          out[pkg] = AppItem(
+                              label = ri.loadLabel(pm).toString(),
+                              pkg = pkg,
+                              icon = drawable,
+                              launchIntent = launch
+                          )
+                      }
+                  }
+
+
+                  return out.values.sortedWith(
+                      compareBy(
+                          { val idx = Config.PINNED.indexOf(it.pkg); if (idx == -1) Int.MAX_VALUE else idx },
+                          { it.label.lowercase() }
+                      )
+                  )
+              }
+          }
+
+
+          class AppAdapter(
+              private val items: List<AppItem>,
+              private val onClick: (AppItem) -> Unit,
+              private val onFocus: (AppItem) -> Unit
+          ) : RecyclerView.Adapter<AppAdapter.VH>() {
+
+
+              class VH(v: View) : RecyclerView.ViewHolder(v) {
+                  val frame: View = v.findViewById(R.id.card_frame)
+                  val icon: ImageView = v.findViewById(R.id.icon)
+                  val label: TextView = v.findViewById(R.id.label)
+              }
+
+
+              override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
+                  val view = LayoutInflater.from(parent.context)
+                      .inflate(R.layout.item_app, parent, false)
+                  return VH(view)
+              }
+
+
+              override fun getItemCount() = items.size
+
+
+              override fun onBindViewHolder(h: VH, position: Int) {
+                  val app = items[position]
+                  h.icon.setImageDrawable(app.icon)
+                  h.label.text = app.label
+                  h.itemView.setOnClickListener { onClick(app) }
+                  h.itemView.setOnFocusChangeListener { v, hasFocus ->
+                      val scale = if (hasFocus) Config.FOCUS_SCALE else 1.0f
+                      v.translationZ = if (hasFocus) 12f else 0f
+                      v.animate()
+                          .scaleX(scale)
+                          .scaleY(scale)
+                          .setDuration(130)
+                          .start()
+                      h.label.animate()
+                          .alpha(if (hasFocus) 1.0f else 0.0f)
+                          .setDuration(130)
+                          .start()
+                      if (hasFocus) {
+                          onFocus(app)
+                      }
+                  }
+              }
+          }
+          EOF
+
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+
+      - name: Build APK
+        run: |
+          gradle wrapper --gradle-version 8.7
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: FireLauncher-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
