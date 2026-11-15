@@ -11,7 +11,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Generate Apple TV Style Project Files
+      - name: Generate PS5 + Apple TV Full Control Project Files
         run: |
           mkdir -p app/src/main/java/com/me/launcher
           mkdir -p app/src/main/res/drawable
@@ -70,8 +70,8 @@ jobs:
                   applicationId = "com.me.launcher"
                   minSdk = 22
                   targetSdk = 34
-                  versionCode = 5
-                  versionName = "2.3-tvOS"
+                  versionCode = 7
+                  versionName = "4.0-PS-tvOS"
               }
 
 
@@ -123,6 +123,12 @@ jobs:
                   android:name="android.permission.QUERY_ALL_PACKAGES"
                   tools:ignore="QueryAllPackagesPermission" />
               <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+              <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+              <uses-permission
+                  android:name="android.permission.READ_EXTERNAL_STORAGE"
+                  android:maxSdkVersion="32" />
+              <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
 
               <application
@@ -173,14 +179,16 @@ jobs:
           cat << 'EOF' > app/src/main/res/values/colors.xml
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
-              <color name="bg_top">#141824</color>
-              <color name="bg_bottom">#080A0F</color>
-              <color name="text_primary">#F5F7FA</color>
-              <color name="text_secondary">#9AA4B8</color>
-              <color name="glass_card">#1F2636</color>
-              <color name="glass_card_focused">#323D57</color>
+              <color name="ps_bg_top">#071329</color>
+              <color name="ps_bg_mid">#0B2247</color>
+              <color name="ps_bg_bottom">#040914</color>
+              <color name="text_primary">#F5F8FF</color>
+              <color name="text_secondary">#9FB4D6</color>
+              <color name="glass_card">#44142747</color>
+              <color name="glass_card_focused">#77244780</color>
               <color name="focus_ring">#FFFFFF</color>
-              <color name="pill_bg">#26FFFFFF</color>
+              <color name="pill_bg">#33FFFFFF</color>
+              <color name="panel_bg">#EE0A1529</color>
           </resources>
           EOF
 
@@ -189,20 +197,21 @@ jobs:
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
               <style name="AppTheme" parent="@android:style/Theme.DeviceDefault.NoActionBar">
-                  <item name="android:windowBackground">@drawable/tvos_wallpaper</item>
+                  <item name="android:windowBackground">@drawable/ps_wallpaper_base</item>
               </style>
           </resources>
           EOF
 
 
-          cat << 'EOF' > app/src/main/res/drawable/tvos_wallpaper.xml
+          cat << 'EOF' > app/src/main/res/drawable/ps_wallpaper_base.xml
           <?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android"
               android:shape="rectangle">
               <gradient
-                  android:angle="270"
-                  android:endColor="@color/bg_bottom"
-                  android:startColor="@color/bg_top"
+                  android:angle="315"
+                  android:centerColor="@color/ps_bg_mid"
+                  android:endColor="@color/ps_bg_bottom"
+                  android:startColor="@color/ps_bg_top"
                   android:type="linear" />
           </shape>
           EOF
@@ -214,13 +223,26 @@ jobs:
               android:shape="rectangle">
               <gradient
                   android:angle="0"
-                  android:endColor="#1A2234"
-                  android:startColor="#26314A"
+                  android:endColor="#550E1E3B"
+                  android:startColor="#77193563"
                   android:type="linear" />
               <stroke
                   android:width="1dp"
-                  android:color="#33FFFFFF" />
-              <corners android:radius="20dp" />
+                  android:color="#44FFFFFF" />
+              <corners android:radius="22dp" />
+          </shape>
+          EOF
+
+
+          cat << 'EOF' > app/src/main/res/drawable/control_panel_bg.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android"
+              android:shape="rectangle">
+              <solid android:color="@color/panel_bg" />
+              <stroke
+                  android:width="1.5dp"
+                  android:color="#4DFFFFFF" />
+              <corners android:radius="24dp" />
           </shape>
           EOF
 
@@ -242,7 +264,7 @@ jobs:
                       <solid android:color="@color/glass_card" />
                       <stroke
                           android:width="1dp"
-                          android:color="#26FFFFFF" />
+                          android:color="#33FFFFFF" />
                       <corners android:radius="18dp" />
                   </shape>
               </item>
@@ -269,150 +291,454 @@ jobs:
           EOF
 
 
-          cat << 'EOF' > app/src/main/res/layout/activity_main.xml
+          cat << 'EOF' > app/src/main/res/drawable/panel_item_bg.xml
           <?xml version="1.0" encoding="utf-8"?>
-          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent"
-              android:background="@drawable/tvos_wallpaper"
-              android:clipChildren="false"
-              android:clipToPadding="false"
-              android:orientation="vertical"
-              android:paddingStart="44dp"
-              android:paddingTop="28dp"
-              android:paddingEnd="44dp"
-              android:paddingBottom="24dp">
-
-
-              <!-- Top tvOS Status & Quick-Settings Bar -->
-              <LinearLayout
-                  android:layout_width="match_parent"
-                  android:layout_height="wrap_content"
-                  android:clipChildren="false"
-                  android:clipToPadding="false"
-                  android:gravity="center_vertical"
-                  android:orientation="horizontal">
-
-
-                  <TextView
-                      android:layout_width="0dp"
-                      android:layout_height="wrap_content"
-                      android:layout_weight="1"
-                      android:letterSpacing="0.04"
-                      android:text="tv"
-                      android:textColor="@color/text_primary"
-                      android:textSize="22sp"
-                      android:textStyle="bold" />
-
-
-                  <TextView
-                      android:id="@+id/btn_settings"
-                      android:layout_width="wrap_content"
-                      android:layout_height="36dp"
-                      android:layout_marginEnd="16dp"
-                      android:background="@drawable/pill_button_bg"
-                      android:focusable="true"
-                      android:focusableInTouchMode="true"
-                      android:gravity="center"
-                      android:paddingStart="18dp"
-                      android:paddingEnd="18dp"
-                      android:text="Settings &amp; Account"
-                      android:textColor="@color/text_primary"
-                      android:textSize="13sp"
-                      android:textStyle="bold" />
-
-
-                  <TextClock
-                      android:id="@+id/clock"
-                      android:layout_width="wrap_content"
-                      android:layout_height="wrap_content"
-                      android:format12Hour="h:mm a"
-                      android:format24Hour="HH:mm"
-                      android:textColor="@color/text_primary"
-                      android:textSize="18sp"
-                      android:textStyle="bold" />
-              </LinearLayout>
-
-
-              <!-- Apple TV Top-Shelf Dynamic Hero Banner -->
-              <LinearLayout
-                  android:id="@+id/hero_shelf"
-                  android:layout_width="match_parent"
-                  android:layout_height="156dp"
-                  android:layout_marginTop="16dp"
-                  android:layout_marginBottom="20dp"
-                  android:background="@drawable/hero_banner_bg"
-                  android:gravity="center_vertical"
-                  android:orientation="horizontal"
-                  android:paddingStart="28dp"
-                  android:paddingEnd="28dp">
-
-
-                  <ImageView
-                      android:id="@+id/hero_icon"
-                      android:layout_width="96dp"
-                      android:layout_height="96dp"
-                      android:contentDescription="@null"
-                      android:scaleType="fitCenter" />
-
-
-                  <LinearLayout
-                      android:layout_width="0dp"
-                      android:layout_height="wrap_content"
-                      android:layout_marginStart="24dp"
-                      android:layout_weight="1"
-                      android:orientation="vertical">
-
-
-                      <TextView
-                          android:id="@+id/hero_kicker"
-                          android:layout_width="wrap_content"
-                          android:layout_height="wrap_content"
-                          android:letterSpacing="0.08"
-                          android:text="TOP SHELF"
-                          android:textColor="@color/text_secondary"
-                          android:textSize="11sp"
-                          android:textStyle="bold" />
-
-
-                      <TextView
-                          android:id="@+id/hero_title"
-                          android:layout_width="wrap_content"
-                          android:layout_height="wrap_content"
-                          android:layout_marginTop="2dp"
-                          android:ellipsize="end"
-                          android:singleLine="true"
-                          android:text="Welcome to IceTV"
-                          android:textColor="@color/text_primary"
-                          android:textSize="28sp"
-                          android:textStyle="bold" />
-
-
-                      <TextView
-                          android:id="@+id/hero_subtitle"
-                          android:layout_width="wrap_content"
-                          android:layout_height="wrap_content"
-                          android:layout_marginTop="4dp"
-                          android:text="Press Menu 3x for Fire TV Home"
-                          android:textColor="@color/text_secondary"
-                          android:textSize="14sp" />
-                  </LinearLayout>
-              </LinearLayout>
-
-
-              <!-- tvOS 5-Column Rounded App Dock Grid -->
-              <androidx.recyclerview.widget.RecyclerView
-                  android:id="@+id/grid"
-                  android:layout_width="match_parent"
-                  android:layout_height="0dp"
-                  android:layout_weight="1"
-                  android:clipChildren="false"
-                  android:clipToPadding="false"
-                  android:padding="12dp" />
-          </LinearLayout>
+          <selector xmlns:android="http://schemas.android.com/apk/res/android">
+              <item android:state_focused="true">
+                  <shape android:shape="rectangle">
+                      <solid android:color="#FFFFFF" />
+                      <corners android:radius="14dp" />
+                  </shape>
+              </item>
+              <item>
+                  <shape android:shape="rectangle">
+                      <solid android:color="#1FFFFFFF" />
+                      <corners android:radius="14dp" />
+                  </shape>
+              </item>
+          </selector>
           EOF
 
 
+          cat << 'EOF' > app/src/main/res/layout/activity_main.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:background="@drawable/ps_wallpaper_base"
+              android:clipChildren="false"
+              android:clipToPadding="false">
+
+
+              <!-- Custom Gallery Wallpaper Layer (Downsampled for Low RAM) -->
+              <ImageView
+                  android:id="@+id/bg_wallpaper"
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent"
+                  android:contentDescription="@null"
+                  android:scaleType="centerCrop"
+                  android:visibility="gone" />
+
+
+              <!-- Subtle Dark Scrim for Icon Legibility over Custom Photos -->
+              <View
+                  android:id="@+id/bg_scrim"
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent"
+                  android:background="#55040914"
+                  android:visibility="gone" />
+
+
+              <!-- Low-End Friendly PS4 / PS5 Ambient Live Wave Wallpaper -->
+              <com.me.launcher.PsWaveView
+                  android:id="@+id/ps_waves"
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent" />
+
+
+              <!-- Main Foreground tvOS Layout -->
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent"
+                  android:clipChildren="false"
+                  android:clipToPadding="false"
+                  android:orientation="vertical"
+                  android:paddingStart="44dp"
+                  android:paddingTop="24dp"
+                  android:paddingEnd="44dp"
+                  android:paddingBottom="20dp">
+
+
+                  <!-- Top Status & Quick-Control Bar -->
+                  <LinearLayout
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:clipChildren="false"
+                      android:clipToPadding="false"
+                      android:gravity="center_vertical"
+                      android:orientation="horizontal">
+
+
+                      <TextView
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:letterSpacing="0.06"
+                          android:text="IceTV"
+                          android:textColor="@color/text_primary"
+                          android:textSize="22sp"
+                          android:textStyle="bold" />
+
+
+                      <TextView
+                          android:id="@+id/network_status"
+                          android:layout_width="0dp"
+                          android:layout_height="wrap_content"
+                          android:layout_marginStart="16dp"
+                          android:layout_weight="1"
+                          android:ellipsize="end"
+                          android:singleLine="true"
+                          android:text="Connected"
+                          android:textColor="@color/text_secondary"
+                          android:textSize="13sp" />
+
+
+                      <TextView
+                          android:id="@+id/btn_reset_hidden"
+                          android:layout_width="wrap_content"
+                          android:layout_height="34dp"
+                          android:layout_marginEnd="10dp"
+                          android:background="@drawable/pill_button_bg"
+                          android:focusable="true"
+                          android:focusableInTouchMode="true"
+                          android:gravity="center"
+                          android:paddingStart="14dp"
+                          android:paddingEnd="14dp"
+                          android:text="Unhide Apps"
+                          android:textColor="@color/text_primary"
+                          android:textSize="12sp"
+                          android:textStyle="bold"
+                          android:visibility="gone" />
+
+
+                      <TextView
+                          android:id="@+id/btn_wallpaper"
+                          android:layout_width="wrap_content"
+                          android:layout_height="34dp"
+                          android:layout_marginEnd="10dp"
+                          android:background="@drawable/pill_button_bg"
+                          android:focusable="true"
+                          android:focusableInTouchMode="true"
+                          android:gravity="center"
+                          android:paddingStart="16dp"
+                          android:paddingEnd="16dp"
+                          android:text="Wallpaper"
+                          android:textColor="@color/text_primary"
+                          android:textSize="13sp"
+                          android:textStyle="bold" />
+
+
+                      <TextView
+                          android:id="@+id/btn_settings"
+                          android:layout_width="wrap_content"
+                          android:layout_height="34dp"
+                          android:layout_marginEnd="16dp"
+                          android:background="@drawable/pill_button_bg"
+                          android:focusable="true"
+                          android:focusableInTouchMode="true"
+                          android:gravity="center"
+                          android:paddingStart="16dp"
+                          android:paddingEnd="16dp"
+                          android:text="Control Center"
+                          android:textColor="@color/text_primary"
+                          android:textSize="13sp"
+                          android:textStyle="bold" />
+
+
+                      <TextClock
+                          android:id="@+id/clock"
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:format12Hour="h:mm a"
+                          android:format24Hour="HH:mm"
+                          android:textColor="@color/text_primary"
+                          android:textSize="18sp"
+                          android:textStyle="bold" />
+                  </LinearLayout>
+
+
+                  <!-- Apple TV Top-Shelf Dynamic Hero Banner -->
+                  <LinearLayout
+                      android:id="@+id/hero_shelf"
+                      android:layout_width="match_parent"
+                      android:layout_height="146dp"
+                      android:layout_marginTop="14dp"
+                      android:layout_marginBottom="16dp"
+                      android:background="@drawable/hero_banner_bg"
+                      android:gravity="center_vertical"
+                      android:orientation="horizontal"
+                      android:paddingStart="28dp"
+                      android:paddingEnd="28dp">
+
+
+                      <ImageView
+                          android:id="@+id/hero_icon"
+                          android:layout_width="88dp"
+                          android:layout_height="88dp"
+                          android:contentDescription="@null"
+                          android:scaleType="fitCenter" />
+
+
+                      <LinearLayout
+                          android:layout_width="0dp"
+                          android:layout_height="wrap_content"
+                          android:layout_marginStart="24dp"
+                          android:layout_weight="1"
+                          android:orientation="vertical">
+
+
+                          <TextView
+                              android:id="@+id/hero_kicker"
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:letterSpacing="0.08"
+                              android:text="FEATURED"
+                              android:textColor="@color/text_secondary"
+                              android:textSize="11sp"
+                              android:textStyle="bold" />
+
+
+                          <TextView
+                              android:id="@+id/hero_title"
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:layout_marginTop="2dp"
+                              android:ellipsize="end"
+                              android:singleLine="true"
+                              android:text="Welcome to IceTV"
+                              android:textColor="@color/text_primary"
+                              android:textSize="28sp"
+                              android:textStyle="bold" />
+
+
+                          <TextView
+                              android:id="@+id/hero_subtitle"
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:layout_marginTop="4dp"
+                              android:text="Select to open • Hold Select to hide"
+                              android:textColor="@color/text_secondary"
+                              android:textSize="13sp" />
+                      </LinearLayout>
+                  </LinearLayout>
+
+
+                  <!-- tvOS 5-Column Rounded App Dock Grid -->
+                  <androidx.recyclerview.widget.RecyclerView
+                      android:id="@+id/grid"
+                      android:layout_width="match_parent"
+                      android:layout_height="0dp"
+                      android:layout_weight="1"
+                      android:clipChildren="false"
+                      android:clipToPadding="false"
+                      android:padding="12dp" />
+              </LinearLayout>
+
+
+              <!-- Built-In tvOS Control Center & Wallpaper Overlay (Never Leaves IceTV) -->
+              <FrameLayout
+                  android:id="@+id/control_overlay"
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent"
+                  android:background="#9902060D"
+                  android:clickable="true"
+                  android:focusable="true"
+                  android:visibility="gone">
+
+
+                  <LinearLayout
+                      android:layout_width="460dp"
+                      android:layout_height="wrap_content"
+                      android:layout_gravity="end|center_vertical"
+                      android:layout_marginEnd="44dp"
+                      android:background="@drawable/control_panel_bg"
+                      android:orientation="vertical"
+                      android:padding="26dp">
+
+
+                      <TextView
+                          android:id="@+id/panel_title"
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:text="IceTV Control Center"
+                          android:textColor="@color/text_primary"
+                          android:textSize="22sp"
+                          android:textStyle="bold" />
+
+
+                      <TextView
+                          android:id="@+id/panel_subtitle"
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:layout_marginTop="2dp"
+                          android:layout_marginBottom="16dp"
+                          android:text="Press Back to return to Home"
+                          android:textColor="@color/text_secondary"
+                          android:textSize="13sp" />
+
+
+                      <!-- Settings & Network Group -->
+                      <LinearLayout
+                          android:id="@+id/group_settings"
+                          android:layout_width="match_parent"
+                          android:layout_height="wrap_content"
+                          android:orientation="vertical">
+
+
+                          <TextView
+                              android:id="@+id/opt_wifi"
+                              android:layout_width="match_parent"
+                              android:layout_height="46dp"
+                              android:layout_marginBottom="10dp"
+                              android:background="@drawable/panel_item_bg"
+                              android:focusable="true"
+                              android:gravity="center_vertical"
+                              android:paddingStart="18dp"
+                              android:paddingEnd="18dp"
+                              android:text="Wi-Fi &amp; Network Settings"
+                              android:textColor="@color/text_primary"
+                              android:textSize="15sp"
+                              android:textStyle="bold" />
+
+
+                          <TextView
+                              android:id="@+id/opt_bluetooth"
+                              android:layout_width="match_parent"
+                              android:layout_height="46dp"
+                              android:layout_marginBottom="10dp"
+                              android:background="@drawable/panel_item_bg"
+                              android:focusable="true"
+                              android:gravity="center_vertical"
+                              android:paddingStart="18dp"
+                              android:paddingEnd="18dp"
+                              android:text="Bluetooth &amp; Remotes"
+                              android:textColor="@color/text_primary"
+                              android:textSize="15sp"
+                              android:textStyle="bold" />
+
+
+                          <TextView
+                              android:id="@+id/opt_display"
+                              android:layout_width="match_parent"
+                              android:layout_height="46dp"
+                              android:layout_marginBottom="10dp"
+                              android:background="@drawable/panel_item_bg"
+                              android:focusable="true"
+                              android:gravity="center_vertical"
+                              android:paddingStart="18dp"
+                              android:paddingEnd="18dp"
+                              android:text="Display &amp; Sound"
+                              android:textColor="@color/text_primary"
+                              android:textSize="15sp"
+                              android:textStyle="bold" />
+
+
+                          <TextView
+                              android:id="@+id/opt_apps"
+                              android:layout_width="match_parent"
+                              android:layout_height="46dp"
+                              android:layout_marginBottom="10dp"
+                              android:background="@drawable/panel_item_bg"
+                              android:focusable="true"
+                              android:gravity="center_vertical"
+                              android:paddingStart="18dp"
+                              android:paddingEnd="18dp"
+                              android:text="Manage Installed Apps"
+                              android:textColor="@color/text_primary"
+                              android:textSize="15sp"
+                              android:textStyle="bold" />
+
+
+                          <TextView
+                              android:id="@+id/opt_accounts"
+                              android:layout_width="match_parent"
+                              android:layout_height="46dp"
+                              android:layout_marginBottom="10dp"
+                              android:background="@drawable/panel_item_bg"
+                              android:focusable="true"
+                              android:gravity="center_vertical"
+                              android:paddingStart="18dp"
+                              android:paddingEnd="18dp"
+                              android:text="Accounts &amp; Profiles"
+                              android:textColor="@color/text_primary"
+                              android:textSize="15sp"
+                              android:textStyle="bold" />
+
+
+                          <TextView
+                              android:id="@+id/opt_all_settings"
+                              android:layout_width="match_parent"
+                              android:layout_height="46dp"
+                              android:background="@drawable/panel_item_bg"
+                              android:focusable="true"
+                              android:gravity="center_vertical"
+                              android:paddingStart="18dp"
+                              android:paddingEnd="18dp"
+                              android:text="All System Settings"
+                              android:textColor="@color/text_primary"
+                              android:textSize="15sp"
+                              android:textStyle="bold" />
+                      </LinearLayout>
+
+
+                      <!-- Wallpaper & Live Waves Group -->
+                      <LinearLayout
+                          android:id="@+id/group_wallpaper"
+                          android:layout_width="match_parent"
+                          android:layout_height="wrap_content"
+                          android:orientation="vertical"
+                          android:visibility="gone">
+
+
+                          <TextView
+                              android:id="@+id/opt_pick_gallery"
+                              android:layout_width="match_parent"
+                              android:layout_height="48dp"
+                              android:layout_marginBottom="10dp"
+                              android:background="@drawable/panel_item_bg"
+                              android:focusable="true"
+                              android:gravity="center_vertical"
+                              android:paddingStart="18dp"
+                              android:paddingEnd="18dp"
+                              android:text="Choose Photo from Gallery / Files"
+                              android:textColor="@color/text_primary"
+                              android:textSize="15sp"
+                              android:textStyle="bold" />
+
+
+                          <TextView
+                              android:id="@+id/opt_toggle_waves"
+                              android:layout_width="match_parent"
+                              android:layout_height="48dp"
+                              android:layout_marginBottom="10dp"
+                              android:background="@drawable/panel_item_bg"
+                              android:focusable="true"
+                              android:gravity="center_vertical"
+                              android:paddingStart="18dp"
+                              android:paddingEnd="18dp"
+                              android:text="PS5 Live Waves: ON"
+                              android:textColor="@color/text_primary"
+                              android:textSize="15sp"
+                              android:textStyle="bold" />
+
+
+                          <TextView
+                              android:id="@+id/opt_reset_wallpaper"
+                              android:layout_width="match_parent"
+                              android:layout_height="48dp"
+                              android:background="@drawable/panel_item_bg"
+                              android:focusable="true"
+                              android:gravity="center_vertical"
+                              android:paddingStart="18dp"
+                              android:paddingEnd="18dp"
+                              android:text="Reset to Default PS5 Blue"
+                              android:textColor="@color/text_primary"
+                              android:textSize="15sp"
+                              android:textStyle="bold" />
+                      </LinearLayout>
+                  </LinearLayout>
+              </FrameLayout>
+          </FrameLayout>
+          EOF
           cat << 'EOF' > app/src/main/res/layout/item_app.xml
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -430,7 +756,7 @@ jobs:
               <FrameLayout
                   android:id="@+id/card_frame"
                   android:layout_width="match_parent"
-                  android:layout_height="104dp"
+                  android:layout_height="100dp"
                   android:background="@drawable/card_bg"
                   android:duplicateParentState="true"
                   android:padding="14dp">
@@ -459,6 +785,120 @@ jobs:
                   android:textSize="13sp"
                   android:textStyle="bold" />
           </LinearLayout>
+          EOF
+
+          cat << 'EOF' > app/src/main/java/com/me/launcher/PsWaveView.kt
+          package com.me.launcher
+
+
+          import android.content.Context
+          import android.graphics.Canvas
+          import android.graphics.Color
+          import android.graphics.Paint
+          import android.graphics.Path
+          import android.util.AttributeSet
+          import android.view.View
+          import kotlin.math.sin
+
+
+          class PsWaveView @JvmOverloads constructor(
+              context: Context,
+              attrs: AttributeSet? = null
+          ) : View(context, attrs) {
+
+
+              private val wave1 = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                  style = Paint.Style.FILL
+                  color = Color.argb(42, 56, 152, 255)
+              }
+              private val wave2 = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                  style = Paint.Style.FILL
+                  color = Color.argb(30, 0, 210, 255)
+              }
+              private val wave3 = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                  style = Paint.Style.STROKE
+                  strokeWidth = 2.5f
+                  color = Color.argb(72, 155, 222, 255)
+              }
+
+
+              private val path = Path()
+              private var phase = 0f
+              private var running = false
+
+
+              private val ticker = object : Runnable {
+                  override fun run() {
+                      if (!running) return
+                      phase += 0.025f
+                      if (phase > 628.3f) phase = 0f
+                      invalidate()
+                      postDelayed(this, 33L)
+                  }
+              }
+
+
+              fun startWaves() {
+                  if (!running && visibility == VISIBLE) {
+                      running = true
+                      post(ticker)
+                  }
+              }
+
+
+              fun stopWaves() {
+                  running = false
+                  removeCallbacks(ticker)
+              }
+
+
+              override fun onDraw(canvas: Canvas) {
+                  super.onDraw(canvas)
+                  val w = width.toFloat()
+                  val h = height.toFloat()
+                  if (w <= 0f || h <= 0f) return
+
+
+                  drawSilkWave(canvas, w, h, h * 0.52f, h * 0.09f, 1.3f, phase, wave1, true)
+                  drawSilkWave(canvas, w, h, h * 0.62f, h * 0.07f, 1.8f, -phase * 0.8f + 1.5f, wave2, true)
+                  drawSilkWave(canvas, w, h, h * 0.56f, h * 0.08f, 1.5f, phase * 1.1f + 0.7f, wave3, false)
+              }
+
+
+              private fun drawSilkWave(
+                  canvas: Canvas,
+                  w: Float,
+                  h: Float,
+                  baseY: Float,
+                  amp: Float,
+                  freq: Float,
+                  offset: Float,
+                  paint: Paint,
+                  fillBottom: Boolean
+              ) {
+                  path.reset()
+                  val step = 36f
+                  var x = 0f
+                  val startY = baseY + sin(offset) * amp
+                  path.moveTo(0f, startY)
+
+
+                  while (x <= w + step) {
+                      val norm = (x / w) * Math.PI.toFloat() * 2f * freq
+                      val y = baseY + sin(norm + offset) * amp
+                      path.lineTo(x, y)
+                      x += step
+                  }
+
+
+                  if (fillBottom) {
+                      path.lineTo(w, h)
+                      path.lineTo(0f, h)
+                      path.close()
+                  }
+                  canvas.drawPath(path, paint)
+              }
+          }
           EOF
 
 
@@ -492,27 +932,45 @@ jobs:
 
 
           import android.app.Activity
+          import android.content.ComponentCallbacks2
+          import android.content.Context
           import android.content.Intent
+          import android.graphics.Bitmap
+          import android.graphics.BitmapFactory
           import android.graphics.Color
           import android.graphics.drawable.Drawable
+          import android.net.ConnectivityManager
+          import android.net.NetworkCapabilities
+          import android.net.Uri
+          import android.os.Build
           import android.os.Bundle
           import android.os.SystemClock
           import android.provider.Settings
           import android.view.KeyEvent
           import android.view.LayoutInflater
+          import android.view.SoundEffectConstants
           import android.view.View
           import android.view.ViewGroup
+          import android.view.animation.OvershootInterpolator
           import android.widget.ImageView
           import android.widget.TextView
           import android.widget.Toast
           import androidx.recyclerview.widget.GridLayoutManager
           import androidx.recyclerview.widget.RecyclerView
+          import java.io.File
+          import java.io.FileOutputStream
 
 
           object Config {
               const val COLUMNS = 5
               const val FOCUS_SCALE = 1.15f
-              val HIDDEN = setOf("com.me.launcher")
+              const val REQ_PICK_WALLPAPER = 401
+              val SYSTEM_HIDDEN = setOf(
+                  "com.me.launcher",
+                  "com.amazon.tv.launcher",
+                  "com.amazon.firehomestarter",
+                  "com.amazon.device.settings"
+              )
               val PINNED = listOf(
                   "in.startv.hotstar",
                   "com.netflix.ninja",
@@ -534,12 +992,25 @@ jobs:
 
 
           class MainActivity : Activity() {
+              private lateinit var bgWallpaper: ImageView
+              private lateinit var bgScrim: View
+              private lateinit var psWaves: PsWaveView
+              private lateinit var networkStatus: TextView
               private lateinit var grid: RecyclerView
               private lateinit var heroShelf: View
               private lateinit var heroIcon: ImageView
               private lateinit var heroTitle: TextView
               private lateinit var heroSubtitle: TextView
               private lateinit var btnSettings: TextView
+              private lateinit var btnWallpaper: TextView
+              private lateinit var btnResetHidden: TextView
+
+
+              private lateinit var controlOverlay: View
+              private lateinit var panelTitle: TextView
+              private lateinit var groupSettings: View
+              private lateinit var groupWallpaper: View
+              private lateinit var optToggleWaves: TextView
 
 
               private var menuPressCount = 0
@@ -551,30 +1022,38 @@ jobs:
                   setContentView(R.layout.activity_main)
 
 
+                  bgWallpaper = findViewById(R.id.bg_wallpaper)
+                  bgScrim = findViewById(R.id.bg_scrim)
+                  psWaves = findViewById(R.id.ps_waves)
+                  networkStatus = findViewById(R.id.network_status)
                   grid = findViewById(R.id.grid)
                   heroShelf = findViewById(R.id.hero_shelf)
                   heroIcon = findViewById(R.id.hero_icon)
                   heroTitle = findViewById(R.id.hero_title)
                   heroSubtitle = findViewById(R.id.hero_subtitle)
                   btnSettings = findViewById(R.id.btn_settings)
+                  btnWallpaper = findViewById(R.id.btn_wallpaper)
+                  btnResetHidden = findViewById(R.id.btn_reset_hidden)
 
 
-                  btnSettings.setOnFocusChangeListener { v, hasFocus ->
-                      btnSettings.setTextColor(if (hasFocus) Color.BLACK else Color.WHITE)
-                      v.animate()
-                          .scaleX(if (hasFocus) 1.08f else 1f)
-                          .scaleY(if (hasFocus) 1.08f else 1f)
-                          .setDuration(120)
-                          .start()
+                  controlOverlay = findViewById(R.id.control_overlay)
+                  panelTitle = findViewById(R.id.panel_title)
+                  groupSettings = findViewById(R.id.group_settings)
+                  groupWallpaper = findViewById(R.id.group_wallpaper)
+                  optToggleWaves = findViewById(R.id.opt_toggle_waves)
+
+
+                  setupPillButton(btnSettings) { openControlPanel(showWallpaper = false) }
+                  setupPillButton(btnWallpaper) { openControlPanel(showWallpaper = true) }
+                  setupPillButton(btnResetHidden) {
+                      prefs().edit().remove("user_hidden").apply()
+                      Toast.makeText(this, "Hidden apps restored", Toast.LENGTH_SHORT).show()
+                      refreshApps()
                   }
 
 
-                  btnSettings.setOnClickListener {
-                      try {
-                          startActivity(Intent(Settings.ACTION_SETTINGS))
-                      } catch (_: Exception) {
-                      }
-                  }
+                  setupOverlayOptions()
+                  applySavedWallpaperAndWaves()
 
 
                   grid.layoutManager = GridLayoutManager(this, Config.COLUMNS)
@@ -584,6 +1063,250 @@ jobs:
 
 
                   refreshApps()
+              }
+
+
+              private fun prefs() = getSharedPreferences("icetv_prefs", Context.MODE_PRIVATE)
+
+
+              private fun setupPillButton(btn: TextView, onClick: () -> Unit) {
+                  btn.setOnFocusChangeListener { v, hasFocus ->
+                      btn.setTextColor(if (hasFocus) Color.BLACK else Color.WHITE)
+                      if (hasFocus) v.playSoundEffect(SoundEffectConstants.NAVIGATION_RIGHT)
+                      v.animate()
+                          .scaleX(if (hasFocus) 1.08f else 1f)
+                          .scaleY(if (hasFocus) 1.08f else 1f)
+                          .setDuration(120)
+                          .start()
+                  }
+                  btn.setOnClickListener { onClick() }
+              }
+
+
+              private fun setupPanelRow(id: Int, onClick: () -> Unit): TextView {
+                  val row = findViewById<TextView>(id)
+                  row.setOnFocusChangeListener { v, hasFocus ->
+                      row.setTextColor(if (hasFocus) Color.BLACK else Color.WHITE)
+                      if (hasFocus) v.playSoundEffect(SoundEffectConstants.NAVIGATION_DOWN)
+                      v.animate()
+                          .scaleX(if (hasFocus) 1.03f else 1f)
+                          .scaleY(if (hasFocus) 1.03f else 1f)
+                          .setDuration(100)
+                          .start()
+                  }
+                  row.setOnClickListener { onClick() }
+                  return row
+              }
+
+
+              private fun setupOverlayOptions() {
+                  setupPanelRow(R.id.opt_wifi) { launchSettingSafe(Settings.ACTION_WIFI_SETTINGS) }
+                  setupPanelRow(R.id.opt_bluetooth) { launchSettingSafe(Settings.ACTION_BLUETOOTH_SETTINGS) }
+                  setupPanelRow(R.id.opt_display) { launchSettingSafe(Settings.ACTION_DISPLAY_SETTINGS) }
+                  setupPanelRow(R.id.opt_apps) { launchSettingSafe(Settings.ACTION_APPLICATION_SETTINGS) }
+                  setupPanelRow(R.id.opt_accounts) { launchSettingSafe(Settings.ACTION_SYNC_SETTINGS) }
+                  setupPanelRow(R.id.opt_all_settings) { launchSettingSafe(Settings.ACTION_SETTINGS) }
+
+
+                  setupPanelRow(R.id.opt_pick_gallery) { openGalleryPicker() }
+                  setupPanelRow(R.id.opt_toggle_waves) {
+                      val next = !prefs().getBoolean("live_waves", true)
+                      prefs().edit().putBoolean("live_waves", next).apply()
+                      applySavedWallpaperAndWaves()
+                  }
+                  setupPanelRow(R.id.opt_reset_wallpaper) {
+                      val file = File(filesDir, "custom_wallpaper.jpg")
+                      if (file.exists()) file.delete()
+                      prefs().edit().putBoolean("live_waves", true).apply()
+                      applySavedWallpaperAndWaves()
+                      Toast.makeText(this, "Reset to default PS5 wallpaper", Toast.LENGTH_SHORT).show()
+                  }
+              }
+
+
+              private fun openControlPanel(showWallpaper: Boolean) {
+                  controlOverlay.visibility = View.VISIBLE
+                  if (showWallpaper) {
+                      panelTitle.text = "Wallpaper & Live Effects"
+                      groupSettings.visibility = View.GONE
+                      groupWallpaper.visibility = View.VISIBLE
+                      findViewById<View>(R.id.opt_pick_gallery).requestFocus()
+                  } else {
+                      panelTitle.text = "IceTV Control Center"
+                      groupWallpaper.visibility = View.GONE
+                      groupSettings.visibility = View.VISIBLE
+                      findViewById<View>(R.id.opt_wifi).requestFocus()
+                  }
+              }
+
+
+              private fun closeControlPanel(): Boolean {
+                  if (controlOverlay.visibility == View.VISIBLE) {
+                      controlOverlay.visibility = View.GONE
+                      grid.getChildAt(0)?.requestFocus()
+                      return true
+                  }
+                  return false
+              }
+
+
+              private fun launchSettingSafe(primaryAction: String) {
+                  try {
+                      startActivity(Intent(primaryAction).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                  } catch (_: Exception) {
+                      try {
+                          startActivity(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                      } catch (_: Exception) {
+                          Toast.makeText(this, "Setting unavailable on this device", Toast.LENGTH_SHORT).show()
+                      }
+                  }
+              }
+
+
+              private fun openGalleryPicker() {
+                  val intents = listOf(
+                      Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                          addCategory(Intent.CATEGORY_OPENABLE)
+                          type = "image/*"
+                      },
+                      Intent(Intent.ACTION_GET_CONTENT).apply {
+                          addCategory(Intent.CATEGORY_OPENABLE)
+                          type = "image/*"
+                      },
+                      Intent(Intent.ACTION_PICK).apply {
+                          type = "image/*"
+                      }
+                  )
+                  for (intent in intents) {
+                      try {
+                          startActivityForResult(intent, Config.REQ_PICK_WALLPAPER)
+                          return
+                      } catch (_: Exception) {
+                      }
+                  }
+                  Toast.makeText(this, "No gallery or file picker app found", Toast.LENGTH_SHORT).show()
+              }
+
+
+              @Deprecated("Deprecated in Java")
+              override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+                  super.onActivityResult(requestCode, resultCode, data)
+                  if (requestCode == Config.REQ_PICK_WALLPAPER && resultCode == RESULT_OK) {
+                      val uri = data?.data ?: return
+                      saveDownsampledWallpaper(uri)
+                  }
+              }
+
+
+              private fun saveDownsampledWallpaper(uri: Uri) {
+                  Thread {
+                      try {
+                          val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                          contentResolver.openInputStream(uri)?.use {
+                              BitmapFactory.decodeStream(it, null, bounds)
+                          }
+                          val targetW = 1280
+                          val targetH = 720
+                          var sample = 1
+                          while (bounds.outWidth / sample > targetW * 2 || bounds.outHeight / sample > targetH * 2) {
+                              sample *= 2
+                          }
+                          val decodeOpts = BitmapFactory.Options().apply {
+                              inSampleSize = sample
+                              inPreferredConfig = Bitmap.Config.RGB_565
+                          }
+                          val bmp = contentResolver.openInputStream(uri)?.use {
+                              BitmapFactory.decodeStream(it, null, decodeOpts)
+                          }
+                          if (bmp != null) {
+                              val outFile = File(filesDir, "custom_wallpaper.jpg")
+                              FileOutputStream(outFile).use { fos ->
+                                  bmp.compress(Bitmap.CompressFormat.JPEG, 85, fos)
+                              }
+                              bmp.recycle()
+                              runOnUiThread {
+                                  applySavedWallpaperAndWaves()
+                                  Toast.makeText(this, "Wallpaper updated", Toast.LENGTH_SHORT).show()
+                              }
+                          }
+                      } catch (_: Exception) {
+                          runOnUiThread {
+                              Toast.makeText(this, "Could not load selected image", Toast.LENGTH_SHORT).show()
+                          }
+                      }
+                  }.start()
+              }
+
+
+              private fun applySavedWallpaperAndWaves() {
+                  val wavesEnabled = prefs().getBoolean("live_waves", true)
+                  optToggleWaves.text = if (wavesEnabled) "PS5 Live Waves: ON" else "PS5 Live Waves: OFF"
+
+
+                  val customFile = File(filesDir, "custom_wallpaper.jpg")
+                  if (customFile.exists()) {
+                      val opts = BitmapFactory.Options().apply { inPreferredConfig = Bitmap.Config.RGB_565 }
+                      val bmp = BitmapFactory.decodeFile(customFile.absolutePath, opts)
+                      if (bmp != null) {
+                          bgWallpaper.setImageBitmap(bmp)
+                          bgWallpaper.visibility = View.VISIBLE
+                          bgScrim.visibility = View.VISIBLE
+                      }
+                  } else {
+                      bgWallpaper.setImageDrawable(null)
+                      bgWallpaper.visibility = View.GONE
+                      bgScrim.visibility = View.GONE
+                  }
+
+
+                  if (wavesEnabled) {
+                      psWaves.visibility = View.VISIBLE
+                      psWaves.startWaves()
+                  } else {
+                      psWaves.stopWaves()
+                      psWaves.visibility = View.GONE
+                  }
+              }
+
+
+              private fun updateNetworkBadge() {
+                  try {
+                      val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                      val connected = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                          val caps = cm.getNetworkCapabilities(cm.activeNetwork)
+                          caps != null && (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+                                  caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET))
+                      } else {
+                          @Suppress("DEPRECATION")
+                          cm.activeNetworkInfo?.isConnected == true
+                      }
+                      networkStatus.text = if (connected) "• Online" else "• Offline"
+                      networkStatus.setTextColor(if (connected) Color.parseColor("#8CE99A") else Color.parseColor("#FFA8A8"))
+                  } catch (_: Exception) {
+                      networkStatus.text = ""
+                  }
+              }
+
+
+              override fun onResume() {
+                  super.onResume()
+                  updateNetworkBadge()
+                  applySavedWallpaperAndWaves()
+              }
+
+
+              override fun onPause() {
+                  psWaves.stopWaves()
+                  super.onPause()
+              }
+
+
+              override fun onTrimMemory(level: Int) {
+                  super.onTrimMemory(level)
+                  if (level >= ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN) {
+                      bgWallpaper.setImageDrawable(null)
+                      grid.adapter = null
+                  }
               }
 
 
@@ -627,6 +1350,7 @@ jobs:
 
               override fun onNewIntent(intent: Intent?) {
                   super.onNewIntent(intent)
+                  closeControlPanel()
                   grid.scrollToPosition(0)
                   refreshApps()
               }
@@ -634,21 +1358,39 @@ jobs:
 
               @Deprecated("Deprecated in Java")
               override fun onBackPressed() {
+                  closeControlPanel()
               }
 
 
               private fun updateTopShelf(app: AppItem) {
                   heroIcon.setImageDrawable(app.icon)
                   heroTitle.text = app.label
-                  heroSubtitle.text = "Select to launch • Menu 3x for Fire TV"
-                  heroShelf.alpha = 0.85f
-                  heroShelf.animate().alpha(1.0f).setDuration(160).start()
+                  heroSubtitle.text = "Select to open • Hold Select to hide"
+                  heroShelf.alpha = 0.88f
+                  heroShelf.animate().alpha(1.0f).setDuration(150).start()
+              }
+
+
+              private fun getUserHidden(): Set<String> {
+                  return prefs().getStringSet("user_hidden", emptySet()) ?: emptySet()
+              }
+
+
+              private fun hideApp(pkg: String, label: String) {
+                  val updated = getUserHidden().toMutableSet().apply { add(pkg) }
+                  prefs().edit().putStringSet("user_hidden", updated).apply()
+                  Toast.makeText(this, "Hidden $label", Toast.LENGTH_SHORT).show()
+                  refreshApps()
               }
 
 
               private fun refreshApps() {
+                  val hiddenSet = getUserHidden()
+                  btnResetHidden.visibility = if (hiddenSet.isNotEmpty()) View.VISIBLE else View.GONE
+
+
                   Thread {
-                      val apps = loadApps()
+                      val apps = loadApps(hiddenSet)
                       runOnUiThread {
                           if (apps.isNotEmpty()) {
                               updateTopShelf(apps[0])
@@ -661,17 +1403,20 @@ jobs:
                                   } catch (_: Exception) {
                                   }
                               },
+                              onLongClick = { app -> hideApp(app.pkg, app.label) },
                               onFocus = { app -> updateTopShelf(app) }
                           )
                           grid.post {
-                              grid.getChildAt(0)?.requestFocus()
+                              if (controlOverlay.visibility != View.VISIBLE) {
+                                  grid.getChildAt(0)?.requestFocus()
+                              }
                           }
                       }
                   }.start()
               }
 
 
-              private fun loadApps(): List<AppItem> {
+              private fun loadApps(userHidden: Set<String>): List<AppItem> {
                   val pm = packageManager
                   val out = LinkedHashMap<String, AppItem>()
 
@@ -680,7 +1425,7 @@ jobs:
                       val query = Intent(Intent.ACTION_MAIN).addCategory(cat)
                       for (ri in pm.queryIntentActivities(query, 0)) {
                           val pkg = ri.activityInfo.packageName
-                          if (pkg in Config.HIDDEN || out.containsKey(pkg)) continue
+                          if (pkg in Config.SYSTEM_HIDDEN || pkg in userHidden || out.containsKey(pkg)) continue
 
 
                           val launch = Intent(Intent.ACTION_MAIN)
@@ -713,12 +1458,15 @@ jobs:
           class AppAdapter(
               private val items: List<AppItem>,
               private val onClick: (AppItem) -> Unit,
+              private val onLongClick: (AppItem) -> Unit,
               private val onFocus: (AppItem) -> Unit
           ) : RecyclerView.Adapter<AppAdapter.VH>() {
 
 
+              private val spring = OvershootInterpolator(1.4f)
+
+
               class VH(v: View) : RecyclerView.ViewHolder(v) {
-                  val frame: View = v.findViewById(R.id.card_frame)
                   val icon: ImageView = v.findViewById(R.id.icon)
                   val label: TextView = v.findViewById(R.id.label)
               }
@@ -739,13 +1487,21 @@ jobs:
                   h.icon.setImageDrawable(app.icon)
                   h.label.text = app.label
                   h.itemView.setOnClickListener { onClick(app) }
+                  h.itemView.setOnLongClickListener {
+                      onLongClick(app)
+                      true
+                  }
                   h.itemView.setOnFocusChangeListener { v, hasFocus ->
                       val scale = if (hasFocus) Config.FOCUS_SCALE else 1.0f
-                      v.translationZ = if (hasFocus) 12f else 0f
+                      v.translationZ = if (hasFocus) 14f else 0f
+                      if (hasFocus) {
+                          v.playSoundEffect(SoundEffectConstants.NAVIGATION_RIGHT)
+                      }
                       v.animate()
                           .scaleX(scale)
                           .scaleY(scale)
-                          .setDuration(130)
+                          .setInterpolator(if (hasFocus) spring else null)
+                          .setDuration(160)
                           .start()
                       h.label.animate()
                           .alpha(if (hasFocus) 1.0f else 0.0f)
